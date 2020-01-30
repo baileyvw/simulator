@@ -24,6 +24,9 @@ type Simulator struct {
 	// ScenariosDir is the location of the scenarios for perturb to use when perturbing
 	// the cluster
 	ScenariosDir string
+	// TmpDir is the path where terraform init, plan and apply will run to avoid needing
+	// to write back to the terraform cluster
+	TmpDir string
 }
 
 // Option is a type used to configure a `Simulator` instance
@@ -61,6 +64,14 @@ func WithAttackTag(attackTag string) Option {
 func WithTfDir(tfDir string) Option {
 	return func(s *Simulator) {
 		s.TfDir = tfDir
+	}
+}
+
+// WithTmpDir returns a configurer for creating a `Simulator` instance with
+// `NewSimulator`
+func WithTmpDir(tmpDir string) Option {
+	return func(s *Simulator) {
+		s.TfDir = tmpDir
 	}
 }
 
