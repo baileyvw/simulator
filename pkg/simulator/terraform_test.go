@@ -12,13 +12,14 @@ import (
 var pwd, _ = os.Getwd()
 var testVarFileArg = "--var-file=" + pwd + "/" + fixture("noop-tf-dir") + "/settings/bastion.tfvars"
 var noopLogger = zap.NewNop().Sugar()
+var testModuleArg = "-from-module=" + pwd + "/" + fixture("noop-tf-dir")
 
 var tfCommandArgumentsTests = []struct {
 	prepArgs  []string
 	arguments []string
 }{
 	{[]string{"output"}, []string{"output", "-json"}},
-	{[]string{"init"}, []string{"init", "-input=false", testVarFileArg, "-backend-config=bucket=test-bucket"}},
+	{[]string{"init"}, []string{"init", "-input=false", testVarFileArg, testModuleArg, "-backend-config=bucket=test-bucket"}},
 	{[]string{"plan"}, []string{"plan", "-input=false", testVarFileArg}},
 	{[]string{"apply"}, []string{"apply", "-input=false", testVarFileArg, "-auto-approve"}},
 	{[]string{"destroy"}, []string{"destroy", "-input=false", testVarFileArg, "-auto-approve"}},
@@ -30,7 +31,8 @@ func Test_PrepareTfArgs(t *testing.T) {
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
 		sim.WithBucketName("test-bucket"),
-		sim.WithTfVarsDir(pwd+"/"+fixture("noop-tf-dir")))
+		sim.WithTfVarsDir(pwd+"/"+fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")))
 
 	for _, tt := range tfCommandArgumentsTests {
 		t.Run("Test arguments for "+tt.prepArgs[0], func(t *testing.T) {
@@ -43,7 +45,7 @@ func Test_Status(t *testing.T) {
 	pwd, _ := os.Getwd()
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
-		sim.WithTfDir(fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithScenariosDir("test"),
 		sim.WithAttackTag("latest"),
 		sim.WithBucketName("test"),
@@ -60,7 +62,7 @@ func Test_Create(t *testing.T) {
 	pwd, _ := os.Getwd()
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
-		sim.WithTfDir(fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithScenariosDir("test"),
 		sim.WithAttackTag("latest"),
 		sim.WithBucketName("test"),
@@ -75,7 +77,7 @@ func Test_Destroy(t *testing.T) {
 	pwd, _ := os.Getwd()
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
-		sim.WithTfDir(fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithAttackTag("latest"),
 		sim.WithBucketName("test"),
 		sim.WithTfVarsDir(pwd+"/"+fixture("noop-tf-dir")))

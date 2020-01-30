@@ -6,6 +6,7 @@ import (
 	"github.com/controlplaneio/simulator-standalone/pkg/ssh"
 	"github.com/controlplaneio/simulator-standalone/pkg/util"
 	"github.com/pkg/errors"
+	"io/ioutil"
 )
 
 // PrepareTfArgs takes a string with the terraform command desired and returns
@@ -25,6 +26,7 @@ func (s *Simulator) PrepareTfArgs(cmd string) []string {
 	}
 
 	if cmd == "init" {
+		arguments = append(arguments, fmt.Sprintf("-from-module=%s", s.TfDir))
 		providerBucketArg := fmt.Sprintf("-backend-config=bucket=%s", s.BucketName)
 		arguments = append(arguments, providerBucketArg)
 	}
@@ -38,7 +40,7 @@ func (s *Simulator) PrepareTfArgs(cmd string) []string {
 
 // Terraform wraps running terraform as a child process
 //func Terraform(wd, cmd string, bucket, tfVarsDir string) (*string, error) {
-func (s *Simulator) Terraform(cmd string) (*string, error) {
+func (s *Simulator) Terraform(wd, cmd string) (*string, error) {
 	args := s.PrepareTfArgs(cmd)
 	env := []string{"TF_IS_IN_AUTOMATION=1", "TF_INPUT=0"}
 	if cmd == "output" {
@@ -46,7 +48,7 @@ func (s *Simulator) Terraform(cmd string) (*string, error) {
 		out, _, err := util.RunSilently(s.TfDir, env, "terraform", args...)
 		return out, err
 	}
-	return util.Run(s.TfDir, env, "terraform", args...)
+	return util.Run(wd, env, "terraform", args...)
 }
 
 // InitIfNeeded checks the IP address and SSH key and updates the tfvars if
@@ -84,7 +86,8 @@ func (s *Simulator) InitIfNeeded() error {
 	}
 
 	s.Logger.Info("Running terraform init")
-	_, err = s.Terraform("init")
+	workDir, _ := ioutil.TempDir("", "")
+	_, err = s.Terraform(workDir, "init")
 	if err != nil {
 		return errors.Wrap(err, "Error initialising terraform")
 	}
@@ -105,13 +108,13 @@ func (s *Simulator) Create() error {
 	}
 
 	s.Logger.Info("Running terraform plan")
-	_, err = s.Terraform("plan")
+	_, err = s.Terraform(s.TfDir, "plan")
 	if err != nil {
 		return err
 	}
 
 	s.Logger.Info("Running terraform apply")
-	_, err = s.Terraform("apply")
+	_, err = s.Terraform(s.TfDir, "apply")
 	return err
 }
 
@@ -125,7 +128,7 @@ func (s *Simulator) Status() (*TerraformOutput, error) {
 	}
 
 	s.Logger.Info("Running terraform output")
-	out, err := s.Terraform("output")
+	out, err := s.Terraform(s.TfDir, "output")
 	if err != nil {
 		return nil, errors.Wrap(err, "Error getting terraform outputs")
 	}
@@ -149,6 +152,6 @@ func (s *Simulator) Destroy() error {
 	}
 
 	s.Logger.Info("Running terrraform destroy")
-	_, err = s.Terraform("destroy")
+	_, err = s.Terraform(s.TfDir, "destroy")
 	return err
 }
