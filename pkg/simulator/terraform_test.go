@@ -12,6 +12,7 @@ import (
 
 var pwd, _ = os.Getwd()
 var testVarFileArg = "--var-file=" + pwd + "/" + fixture("noop-tf-dir") + "/settings/bastion.tfvars"
+var tfDir = pwd + "/" + fixture("noop-tf-dir")
 var noopLogger = zap.NewNop().Sugar()
 
 var tfCommandArgumentsTests = []struct {
@@ -19,9 +20,9 @@ var tfCommandArgumentsTests = []struct {
 	arguments []string
 }{
 	{[]string{"output"}, []string{"output", "-json"}},
-	{[]string{"init"}, []string{"init", "-input=false", testVarFileArg, "-backend-config=bucket=test-bucket"}},
-	{[]string{"plan"}, []string{"plan", "-input=false", testVarFileArg}},
-	{[]string{"apply"}, []string{"apply", "-input=false", testVarFileArg, "-auto-approve"}},
+	{[]string{"init"}, []string{"init", "-input=false", testVarFileArg, "-backend-config=bucket=test-bucket", tfDir}},
+	{[]string{"plan"}, []string{"plan", "-input=false", testVarFileArg, tfDir}},
+	{[]string{"apply"}, []string{"apply", "-input=false", testVarFileArg, "-auto-approve", tfDir}},
 	{[]string{"destroy"}, []string{"destroy", "-input=false", testVarFileArg, "-auto-approve"}},
 }
 
@@ -31,6 +32,7 @@ func Test_PrepareTfArgs(t *testing.T) {
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
 		sim.WithBucketName("test-bucket"),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithTfVarsDir(pwd+"/"+fixture("noop-tf-dir")))
 
 	for _, tt := range tfCommandArgumentsTests {
@@ -44,7 +46,7 @@ func Test_Status(t *testing.T) {
 	pwd, _ := os.Getwd()
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
-		sim.WithTfDir(fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithScenariosDir("test"),
 		sim.WithAttackTag("latest"),
 		sim.WithBucketName("test"),
@@ -62,7 +64,7 @@ func Test_Create(t *testing.T) {
 	tmpDir, _ := ioutil.TempDir("", "")
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
-		sim.WithTfDir(fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithScenariosDir("test"),
 		sim.WithAttackTag("latest"),
 		sim.WithBucketName("test"),
@@ -78,7 +80,7 @@ func Test_Destroy(t *testing.T) {
 	pwd, _ := os.Getwd()
 	simulator := sim.NewSimulator(
 		sim.WithLogger(noopLogger),
-		sim.WithTfDir(fixture("noop-tf-dir")),
+		sim.WithTfDir(pwd+"/"+fixture("noop-tf-dir")),
 		sim.WithAttackTag("latest"),
 		sim.WithBucketName("test"),
 		sim.WithTfVarsDir(pwd+"/"+fixture("noop-tf-dir")))
